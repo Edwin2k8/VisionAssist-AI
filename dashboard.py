@@ -1,25 +1,7 @@
-from ultralytics import YOLO
-import cv2
-from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
 import streamlit as st
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
-from streamlit_webrtc import webrtc_streamer
-
-model = YOLO("yolov8n.pt")
-
-class YOLOProcessor(VideoProcessorBase):
-
-    def recv(self, frame):
-
-        img = frame.to_ndarray(format="bgr24")
-
-        results = model(img, imgsz=320, verbose=False)
-
-        annotated_frame = results[0].plot()
-
-        return annotated_frame
 
 # ---------------- PAGE CONFIG ----------------
 
@@ -43,7 +25,6 @@ page = st.sidebar.radio(
     "Navigation",
     [
         "🏠 Dashboard",
-        "📹 Live Camera",
         "📋 Detection History",
         "📊 Analytics",
         "ℹ️ About"
@@ -56,46 +37,21 @@ if page == "🏠 Dashboard":
 
     st.title("👁️ VisionAssist AI Dashboard")
 
-    st.success("Welcome to VisionAssist AI v3.1 🚀")
+    st.success("Welcome to VisionAssist AI Dashboard 🚀")
 
     total_detections = len(df)
-
     unique_objects = df["object_name"].nunique()
 
-    top_object = (
-        df["object_name"]
-        .value_counts()
-        .idxmax()
-    )
+    if total_detections > 0:
+        top_object = df["object_name"].value_counts().idxmax()
+    else:
+        top_object = "None"
 
     col1, col2, col3 = st.columns(3)
 
-    col1.metric(
-        "Total Detections",
-        total_detections
-    )
-
-    col2.metric(
-        "Unique Objects",
-        unique_objects
-    )
-
-    col3.metric(
-        "Top Object",
-        top_object
-    )
-# ---------------- LIVE CAMERA ----------------
-
-elif page == "📹 Live Camera":
-
-    st.title("📹 VisionAssist AI Live Detection")
-
-    st.info("YOLOv8 Real-Time Object Detection")
-
-    webrtc_streamer(
-        key="yolo",
-        video_processor_factory=YOLOProcessor
-    )
+    col1.metric("Total Detections", total_detections)
+    col2.metric("Unique Objects", unique_objects)
+    col3.metric("Top Object", top_object)
 
 # ---------------- DETECTION HISTORY ----------------
 
@@ -103,10 +59,7 @@ elif page == "📋 Detection History":
 
     st.title("📋 Detection History")
 
-    st.dataframe(
-        df,
-        use_container_width=True
-    )
+    st.dataframe(df, use_container_width=True)
 
     csv = df.to_csv(index=False)
 
@@ -123,38 +76,37 @@ elif page == "📊 Analytics":
 
     st.title("📊 Analytics")
 
-    object_counts = (
-        df["object_name"]
-        .value_counts()
-    )
+    if len(df) > 0:
 
-    st.subheader("📊 Most Detected Objects")
+        object_counts = df["object_name"].value_counts()
 
-    fig, ax = plt.subplots()
+        st.subheader("📊 Most Detected Objects")
 
-    object_counts.plot(
-        kind="bar",
-        ax=ax
-    )
+        fig, ax = plt.subplots()
 
-    ax.set_xlabel("Object")
-    ax.set_ylabel("Count")
+        object_counts.plot(kind="bar", ax=ax)
 
-    st.pyplot(fig)
+        ax.set_xlabel("Object")
+        ax.set_ylabel("Count")
 
-    st.subheader("🥧 Object Distribution")
+        st.pyplot(fig)
 
-    fig2, ax2 = plt.subplots()
+        st.subheader("🥧 Object Distribution")
 
-    object_counts.plot(
-        kind="pie",
-        autopct="%1.1f%%",
-        ax=ax2
-    )
+        fig2, ax2 = plt.subplots()
 
-    ax2.set_ylabel("")
+        object_counts.plot(
+            kind="pie",
+            autopct="%1.1f%%",
+            ax=ax2
+        )
 
-    st.pyplot(fig2)
+        ax2.set_ylabel("")
+
+        st.pyplot(fig2)
+
+    else:
+        st.info("No detection data available.")
 
 # ---------------- ABOUT ----------------
 
@@ -163,48 +115,26 @@ elif page == "ℹ️ About":
     st.title("ℹ️ About VisionAssist AI")
 
     st.markdown("""
-    ## 👁️ VisionAssist AI
+## 👁️ VisionAssist AI
 
-    VisionAssist AI is a Computer Vision application developed using Python, OpenCV, YOLOv8, SQLite, and Streamlit.
+VisionAssist AI is a Computer Vision analytics dashboard built using Python, Streamlit, SQLite, Pandas and Matplotlib.
 
-    ### Technologies Used
+### Features
 
-    - Python
-    - OpenCV
-    - YOLOv8
-    - SQLite
-    - Streamlit
-    - Pandas
-    - Matplotlib
+- 📊 Detection Analytics
+- 📋 Detection History
+- 📥 CSV Export
+- 📈 Charts & Statistics
 
-    ### Features
+### Technologies
 
-    ✅ Face Detection
+- Python
+- Streamlit
+- SQLite
+- Pandas
+- Matplotlib
 
-    ✅ Object Detection
+### Developer
 
-    ✅ Object Counting
-
-    ✅ Detection History
-
-    ✅ Analytics Dashboard
-
-    ✅ CSV Export
-
-    ### Developer
-
-    Edwin
-
-    ### Future Improvements
-
-    - Real-time Streamlit Webcam
-    - Screenshot Capture
-    - Object Confidence Scores
-    - Dark Theme UI
-    - Cloud Deployment
-    """)
-
-# ---------------- FOOTER ----------------
-
-st.markdown("---")
-st.caption("Developed by Edwin | VisionAssist AI v3.1")
+Edwin
+""")
